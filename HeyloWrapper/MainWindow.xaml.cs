@@ -42,18 +42,29 @@ namespace HeyloWrapper
 
         private void ClientProxy_CommandIssued(ClientAPIProxy proxy, ClientCommand command)
         {
-            Storyboard sb;
-            switch (command)
+            Dispatcher.Invoke(() =>
             {
-                case ClientCommand.HeightIncrease:
-                    sb = FindResource("IncreaseHeight") as Storyboard;
-                    sb.Begin();
-                    break;
-                case ClientCommand.HeightDecrease:
-                    sb = FindResource("DecreaseHeight") as Storyboard;
-                    sb.Begin();
-                    break;
-            }
+                Storyboard sb;
+                switch (command)
+                {
+                    case ClientCommand.HeightIncrease:
+                        sb = FindResource("IncreaseHeight") as Storyboard;
+                        sb.Begin();
+                        break;
+                    case ClientCommand.HeightDecrease:
+                        sb = FindResource("DecreaseHeight") as Storyboard;
+                        sb.Begin();
+                        break;
+                    case ClientCommand.WidthIncrease:
+                        sb = FindResource("IncreaseWidth") as Storyboard;
+                        sb.Begin();
+                        break;
+                    case ClientCommand.WidthDecrease:
+                        sb = FindResource("DecreaseWidth") as Storyboard;
+                        sb.Begin();
+                        break;
+                }
+            });
         }
     }
 
@@ -61,6 +72,8 @@ namespace HeyloWrapper
     {
         HeightIncrease,
         HeightDecrease,
+        WidthIncrease,
+        WidthDecrease,
     }
 
     class ClientAPIProxy
@@ -76,6 +89,16 @@ namespace HeyloWrapper
         public void decreaseHeight()
         {
             CommandIssued?.Invoke(this, ClientCommand.HeightDecrease);
+        }
+
+        public void increaseWidth()
+        {
+            CommandIssued?.Invoke(this, ClientCommand.WidthIncrease);
+        }
+
+        public void decreaseWidth()
+        {
+            CommandIssued?.Invoke(this, ClientCommand.WidthDecrease);
         }
     }
 }

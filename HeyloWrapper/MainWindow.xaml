@@ -16,8 +16,8 @@
     Background="DarkGray"
     Title="Heylo"
     Name="window"
-    Height="60"
-    Width="400">
+    Height="70"
+    Width="120">
     <Window.Resources>
         <Storyboard
             x:Key="IncreaseHeight"
@@ -25,8 +25,13 @@
             <DoubleAnimation
                 Storyboard.TargetName="window"
                 Storyboard.TargetProperty="(Window.Height)"
-                To="120"
-                Duration="0:0:2" />
+                To="150"
+                Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <ExponentialEase
+                        EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
         <Storyboard
             x:Key="DecreaseHeight"
@@ -34,13 +39,51 @@
             <DoubleAnimation
                 Storyboard.TargetName="window"
                 Storyboard.TargetProperty="(Window.Height)"
-                To="60"
-                Duration="0:0:2" />
+                To="70"
+                Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <ExponentialEase
+                        EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+        <Storyboard
+            x:Key="IncreaseWidth"
+            AutoReverse="False">
+            <DoubleAnimation
+                Storyboard.TargetName="window"
+                Storyboard.TargetProperty="(Window.Width)"
+                To="550"
+                Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <ExponentialEase
+                        EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+        <Storyboard
+            x:Key="DecreaseWidth"
+            AutoReverse="False">
+            <DoubleAnimation
+                Storyboard.TargetName="window"
+                Storyboard.TargetProperty="(Window.Width)"
+                To="120"
+                Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <ExponentialEase
+                        EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
     </Window.Resources>
     <Grid>
         <cefSharp:ChromiumWebBrowser
-            Name="browser">
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Width="550"
+            Height="150"
+            Name="browser"
+            Address="https://team-halo.github.io/heylo-student-client/">
         </cefSharp:ChromiumWebBrowser>
     </Grid>
 </Window>
