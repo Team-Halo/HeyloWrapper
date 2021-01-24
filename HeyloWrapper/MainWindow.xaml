@@ -17,7 +17,8 @@
     Title="Heylo"
     Name="window"
     Height="70"
-    Width="120">
+    Width="120"
+    SourceInitialized="window_SourceInitialized">
     <Window.Resources>
         <Storyboard
             x:Key="IncreaseHeight"

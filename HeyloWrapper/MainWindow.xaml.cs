@@ -1,6 +1,8 @@
 ﻿using CefSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +25,7 @@ namespace HeyloWrapper
     public partial class MainWindow : Window
     {
         ClientAPIProxy clientProxy;
+        bool cameraOn = true;
 
         public MainWindow()
         {
@@ -63,6 +66,82 @@ namespace HeyloWrapper
                         sb = FindResource("DecreaseWidth") as Storyboard;
                         sb.Begin();
                         break;
+                    case ClientCommand.TurnOffCamera:
+                        cameraOn = false;
+                        break;
+                    case ClientCommand.TurnOnCamera:
+                        cameraOn = true;
+                        break;
+                }
+            });
+        }
+
+        private async void window_SourceInitialized(object sender, EventArgs e)
+        {
+            webcamDetection();
+        }
+
+        async void webcamDetection()
+        {
+            await Task.Run(() =>
+            {
+                using (Process process = new Process())
+                {
+                    process.StartInfo.FileName = "python";
+                    process.StartInfo.Arguments = "emotion.py";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardInput = true;
+                    process.Start();
+
+                    StreamReader reader = process.StandardOutput;
+                    StreamWriter writer = process.StandardInput;
+
+                    bool camera = true;
+
+                    while (true)
+                    {
+                        Console.WriteLine("Loop");
+                        if (cameraOn && !camera)
+                        {
+                            writer.WriteLine("r");
+                            Console.WriteLine("TURN ON CAMERA");
+                            camera = true;
+                        }
+                        else if (!cameraOn && camera)
+                        {
+                            writer.WriteLine("p");
+                            Console.WriteLine("TURN OFF CAMERA");
+                            camera = false;
+                        }
+                        // Synchronously read the standard output of the spawned process.
+                        string output = reader.ReadToEnd();
+                        Console.WriteLine("heylo: " + output);
+
+                        if (output.Contains("HEYLO_frowning"))
+                        {
+                            Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.frowning()"));
+                        }
+                        else if (output.Contains("HEYLO_sleeping"))
+                        {
+                            Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.sleepy()"));
+                        }
+                        else if (output.Contains("HEYLO_happy"))
+                        {
+                            Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.happy()"));
+                        }
+
+                        // To pause the face detection:
+                        // writer.WriteLine("p");
+
+                        // To resume the face detection:
+                        // writer.WriteLine("r");
+
+                        // To quit the face detection:
+                        // writer.WRiteLine("q");
+                    }
+
+                    process.WaitForExit();
                 }
             });
         }
@@ -74,6 +153,8 @@ namespace HeyloWrapper
         HeightDecrease,
         WidthIncrease,
         WidthDecrease,
+        TurnOffCamera,
+        TurnOnCamera,
     }
 
     class ClientAPIProxy
@@ -99,6 +180,16 @@ namespace HeyloWrapper
         public void decreaseWidth()
         {
             CommandIssued?.Invoke(this, ClientCommand.WidthDecrease);
+        }
+
+        public void turnOffCamera()
+        {
+            CommandIssued?.Invoke(this, ClientCommand.TurnOffCamera);
+        }
+
+        public void turnOnCamera()
+        {
+            CommandIssued?.Invoke(this, ClientCommand.TurnOnCamera);
         }
     }
 }
