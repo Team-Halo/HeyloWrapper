@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -67,10 +68,14 @@ namespace HeyloWrapper
                         sb.Begin();
                         break;
                     case ClientCommand.TurnOffCamera:
-                        cameraOn = false;
+                        process.StandardInput.WriteLine("p");
+                        process.StandardInput.Flush();
+                        Console.WriteLine("TURN OFF CAMERA");
                         break;
                     case ClientCommand.TurnOnCamera:
-                        cameraOn = true;
+                        process.StandardInput.WriteLine("r");
+                        process.StandardInput.Flush();
+                        Console.WriteLine("TURN ON CAMERA");
                         break;
                 }
             });
@@ -81,68 +86,53 @@ namespace HeyloWrapper
             webcamDetection();
         }
 
+        Process process;
+
         async void webcamDetection()
         {
             await Task.Run(() =>
             {
-                using (Process process = new Process())
+                using (AutoResetEvent outputWaitHandle = new AutoResetEvent(false))
                 {
+                    process = new Process();
+                    // preparing ProcessStartInfo
                     process.StartInfo.FileName = "python";
                     process.StartInfo.Arguments = "emotion.py";
                     process.StartInfo.UseShellExecute = false;
                     process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.CreateNoWindow = true;
                     process.StartInfo.RedirectStandardInput = true;
-                    process.Start();
-
-                    StreamReader reader = process.StandardOutput;
-                    StreamWriter writer = process.StandardInput;
-
-                    bool camera = true;
-
-                    while (true)
+                    StringBuilder outputBuilder = new StringBuilder();
+                    try
                     {
-                        Console.WriteLine("Loop");
-                        if (cameraOn && !camera)
+                        process.OutputDataReceived += (sender, e) =>
                         {
-                            writer.WriteLine("r");
-                            Console.WriteLine("TURN ON CAMERA");
-                            camera = true;
-                        }
-                        else if (!cameraOn && camera)
-                        {
-                            writer.WriteLine("p");
-                            Console.WriteLine("TURN OFF CAMERA");
-                            camera = false;
-                        }
-                        // Synchronously read the standard output of the spawned process.
-                        string output = reader.ReadToEnd();
-                        Console.WriteLine("heylo: " + output);
+                            Console.WriteLine(e.Data);
+                            if (e.Data == null) return;
+                            if (e.Data.Contains("HEYLO_frowning"))
+                            {
+                                Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.frowning()"));
+                            }
+                            else if (e.Data.Contains("HEYLO_sleeping"))
+                            {
+                                Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.sleepy()"));
+                            }
+                            else if (e.Data.Contains("HEYLO_happy"))
+                            {
+                                Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.happy()"));
+                            }
+                        };
 
-                        if (output.Contains("HEYLO_frowning"))
-                        {
-                            Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.frowning()"));
-                        }
-                        else if (output.Contains("HEYLO_sleeping"))
-                        {
-                            Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.sleepy()"));
-                        }
-                        else if (output.Contains("HEYLO_happy"))
-                        {
-                            Dispatcher.Invoke(() => browser.ExecuteScriptAsync("window.happy()"));
-                        }
+                        process.Start();
 
-                        // To pause the face detection:
-                        // writer.WriteLine("p");
-
-                        // To resume the face detection:
-                        // writer.WriteLine("r");
-
-                        // To quit the face detection:
-                        // writer.WRiteLine("q");
+                        process.BeginOutputReadLine();
                     }
-
-                    process.WaitForExit();
+                    finally
+                    {
+                        outputWaitHandle.WaitOne();
+                    }
                 }
+
             });
         }
     }
